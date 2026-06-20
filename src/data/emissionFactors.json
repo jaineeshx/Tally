@@ -1,0 +1,133 @@
+{
+  "version": "2026-06-20",
+  "_note": "Values flagged 'estimated' are reasonable approximations for hackathon use. Production version would source and verify individually. See README for methodology.",
+  "factors": {
+    "transport": {
+      "bus": {
+        "unit": "per_km",
+        "kg_co2e": 0.105,
+        "source": "DEFRA 2025",
+        "default_km_per_trip": 8
+      },
+      "metro": {
+        "unit": "per_km",
+        "kg_co2e": 0.041,
+        "source": "DEFRA 2025",
+        "default_km_per_trip": 12
+      },
+      "car_solo": {
+        "unit": "per_km",
+        "kg_co2e": 0.171,
+        "source": "DEFRA 2025",
+        "default_km_per_trip": 10
+      },
+      "car_shared_2": {
+        "unit": "per_km",
+        "kg_co2e": 0.086,
+        "source": "DEFRA 2025 (car_solo / 2 occupants)",
+        "default_km_per_trip": 10
+      },
+      "two_wheeler": {
+        "unit": "per_km",
+        "kg_co2e": 0.072,
+        "source": "DEFRA 2025",
+        "default_km_per_trip": 8
+      },
+      "walk_cycle": {
+        "unit": "per_km",
+        "kg_co2e": 0,
+        "source": "n/a",
+        "default_km_per_trip": 3
+      },
+      "flight_domestic": {
+        "unit": "per_trip",
+        "kg_co2e": 180,
+        "source": "DEFRA 2025 (short-haul economy, radiative forcing included)"
+      }
+    },
+    "food": {
+      "meat_meal": {
+        "unit": "per_meal",
+        "kg_co2e": 3.3,
+        "source": "IPCC AR6 default food emission factors"
+      },
+      "veg_meal": {
+        "unit": "per_meal",
+        "kg_co2e": 0.9,
+        "source": "IPCC AR6 default food emission factors"
+      },
+      "food_delivery_avg": {
+        "unit": "per_order",
+        "kg_co2e": 1.4,
+        "source": "estimated: packaging (0.5 kg) + last-mile two-wheeler delivery (0.9 kg avg 8 km)"
+      }
+    },
+    "home": {
+      "electricity_unit": {
+        "unit": "per_kwh",
+        "kg_co2e": 0.71,
+        "source": "CEA CO2 Baseline Database for Indian Power Sector, FY 2022-23 national weighted average"
+      },
+      "laundry_load": {
+        "unit": "per_load",
+        "kg_co2e": 0.6,
+        "source": "estimated: ~0.85 kWh per load × 0.71 kg CO2e/kWh"
+      },
+      "ac_hour": {
+        "unit": "per_hour",
+        "kg_co2e": 0.9,
+        "source": "derived: 1.25 kW avg 1.5-ton AC × 0.71 kg CO2e/kWh CEA factor"
+      }
+    },
+    "shopping": {
+      "online_order_avg": {
+        "unit": "per_order",
+        "kg_co2e": 1.0,
+        "source": "estimated: packaging (0.3 kg) + last-mile delivery (0.7 kg avg)"
+      }
+    }
+  },
+  "comparisons": {
+    "km_driven_per_kg_co2e": 5.85,
+    "phone_charges_per_kg_co2e": 121,
+    "tree_months_per_kg_co2e": 0.067,
+    "sources": {
+      "km_driven": "US EPA: average car emits 0.171 kg CO2e/km",
+      "phone_charges": "US EPA: charging a smartphone uses ~0.00826 kWh = 0.00587 kg CO2e per charge at US grid; scaled to 1 kg",
+      "tree_months": "US EPA: one tree sequesters ~21 kg CO2/year = 1.75 kg/month"
+    }
+  },
+  "cost_estimates_inr": {
+    "bus": { "per_trip": 20 },
+    "metro": { "per_trip": 40 },
+    "car_solo": { "per_km": 8 },
+    "car_shared_2": { "per_km": 4 },
+    "two_wheeler": { "per_km": 3.5 },
+    "walk_cycle": { "per_trip": 0 },
+    "flight_domestic": { "per_trip": 4500 },
+    "meat_meal": { "per_meal": 200 },
+    "veg_meal": { "per_meal": 80 },
+    "food_delivery_avg": { "per_order": 350 },
+    "electricity_unit": { "per_kwh": 6 },
+    "laundry_load": { "per_load": 5 },
+    "ac_hour": { "per_hour": 9 },
+    "online_order_avg": { "per_order": 600 }
+  },
+  "indian_cities": [
+    { "name": "Mumbai", "state": "Maharashtra", "grid_region": "Western" },
+    { "name": "Delhi", "state": "Delhi", "grid_region": "Northern" },
+    { "name": "Bengaluru", "state": "Karnataka", "grid_region": "Southern" },
+    { "name": "Hyderabad", "state": "Telangana", "grid_region": "Southern" },
+    { "name": "Chennai", "state": "Tamil Nadu", "grid_region": "Southern" },
+    { "name": "Kolkata", "state": "West Bengal", "grid_region": "Eastern" },
+    { "name": "Pune", "state": "Maharashtra", "grid_region": "Western" },
+    { "name": "Ahmedabad", "state": "Gujarat", "grid_region": "Western" },
+    { "name": "Jaipur", "state": "Rajasthan", "grid_region": "Northern" },
+    { "name": "Lucknow", "state": "Uttar Pradesh", "grid_region": "Northern" },
+    { "name": "Chandigarh", "state": "Punjab", "grid_region": "Northern" },
+    { "name": "Kochi", "state": "Kerala", "grid_region": "Southern" },
+    { "name": "Bhopal", "state": "Madhya Pradesh", "grid_region": "Western" },
+    { "name": "Visakhapatnam", "state": "Andhra Pradesh", "grid_region": "Southern" },
+    { "name": "Guwahati", "state": "Assam", "grid_region": "North-Eastern" }
+  ]
+}
