@@ -8,6 +8,20 @@
     <meta name="description" content="Tally helps you track, budget, and optimize what your day actually costs you in rupees and carbon impact." />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Tally — Spend & Carbon Tracker</title>
+    <!-- Content Security Policy: restrict sources to self + Supabase CDN only -->
+    <meta http-equiv="Content-Security-Policy"
+      content="
+        default-src 'self';
+        script-src 'self' 'wasm-unsafe-eval';
+        style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+        font-src 'self' https://fonts.gstatic.com;
+        img-src 'self' data: blob:;
+        connect-src 'self' https://*.supabase.co wss://*.supabase.co;
+        worker-src 'self' blob:;
+        manifest-src 'self';
+      " />
+    <!-- Security headers -->
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
   </head>
   <body>
     <div id="root"></div>

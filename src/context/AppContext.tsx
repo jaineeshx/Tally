@@ -9,11 +9,13 @@ import React, {
   useEffect,
   useReducer,
   useCallback,
+  useRef,
   type ReactNode,
 } from 'react';
 import type { UserProfile, LogEntry, StreakInfo } from '../types';
 import { calculateStreak } from '../lib/streaks';
 import { supabase, isSupabaseAvailable } from '../lib/supabaseClient';
+import { validateLog, MAX_LOGS } from '../lib/validation';
 
 // ── State ──────────────────────────────────────────────────
 interface AppState {
@@ -43,7 +45,8 @@ function reducer(state: AppState, action: Action): AppState {
     case 'SET_PROFILE':
       return { ...state, profile: action.profile };
     case 'ADD_LOG': {
-      const logs = [action.log, ...state.logs];
+      // Cap stored logs to MAX_LOGS (newest first) to prevent unbounded growth
+      const logs = [action.log, ...state.logs].slice(0, MAX_LOGS);
       return {
         ...state,
         logs,
@@ -84,15 +87,16 @@ function loadFromLS(): Partial<AppState> {
     const logs = localStorage.getItem(LS_LOGS);
     const badges = localStorage.getItem(LS_BADGES);
     const onboarding = localStorage.getItem(LS_ONBOARDING);
-    const parsedLogs: LogEntry[] = logs ? JSON.parse(logs) : [];
+    const parsedLogs: LogEntry[] = logs ? (JSON.parse(logs) as LogEntry[]) : [];
     return {
-      profile: profile ? JSON.parse(profile) : null,
+      profile: profile ? (JSON.parse(profile) as UserProfile) : null,
       logs: parsedLogs,
       streakInfo: calculateStreak(parsedLogs),
-      earnedBadgeIds: badges ? JSON.parse(badges) : [],
+      earnedBadgeIds: badges ? (JSON.parse(badges) as string[]) : [],
       onboardingComplete: onboarding === 'true',
     };
   } catch {
+    // localStorage corrupted — start fresh
     return {};
   }
 }
@@ -100,7 +104,11 @@ function loadFromLS(): Partial<AppState> {
 // ── Context ────────────────────────────────────────────────
 interface AppContextValue extends AppState {
   saveProfile: (profile: UserProfile) => void;
-  addLog: (log: Omit<LogEntry, 'id' | 'logged_at' | 'synced'>) => void;
+  /**
+   * Add a validated log entry to the store.
+   * Returns an error message string if validation fails, null on success.
+   */
+  addLog: (log: Omit<LogEntry, 'id' | 'logged_at' | 'synced'>) => string | null;
   completeOnboarding: () => void;
   signInWithMagicLink: (email: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
@@ -122,6 +130,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     ...initial,
   });
 
+  // Keep a stable ref to state for callbacks that must not capture stale state.
+  // This avoids stale closure bugs in addLog and sync effects.
+  const stateRef = useRef(state);
+  useEffect(() => { stateRef.current = state; }, [state]);
+
   // ── Persist to localStorage on every state change ─────────
   useEffect(() => {
     if (state.profile) localStorage.setItem(LS_PROFILE, JSON.stringify(state.profile));
@@ -141,16 +154,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // ── Sync unsynced logs to Supabase when authenticated ─────
   useEffect(() => {
-    if (!state.isAuthenticated || !supabase) return;
-    const unsynced = state.logs.filter((l) => !l.synced && l.user_id === undefined);
+    const { isAuthenticated, userId } = stateRef.current;
+    if (!isAuthenticated || !supabase || !userId) return;
+
+    const unsynced = stateRef.current.logs.filter((l) => !l.synced);
     if (unsynced.length === 0) return;
 
     dispatch({ type: 'SET_SYNCING', syncing: true });
-    supabase
+    void supabase
       .from('logs')
       .insert(
         unsynced.map((l) => ({
-          user_id: state.userId,
+          user_id: userId,
           category: l.category,
           subcategory: l.subcategory,
           co2e_kg: l.co2e_kg,
@@ -162,38 +177,57 @@ export function AppProvider({ children }: { children: ReactNode }) {
         if (!error) {
           dispatch({
             type: 'SET_LOGS',
-            logs: state.logs.map((l) => ({ ...l, synced: true })),
+            logs: stateRef.current.logs.map((l) => ({ ...l, synced: true })),
           });
         }
         dispatch({ type: 'SET_SYNCING', syncing: false });
       });
-  }, [state.isAuthenticated, state.userId]); // eslint-disable-line
+  // Intentional: run only when auth state changes, read latest logs via ref
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.isAuthenticated]);
 
   // ── Actions ────────────────────────────────────────────────
   const saveProfile = useCallback((profile: UserProfile) => {
     dispatch({ type: 'SET_PROFILE', profile });
-    if (supabase && state.userId) {
-      supabase.from('profiles').upsert({
-        id: state.userId,
+    const { userId } = stateRef.current;
+    if (supabase && userId) {
+      void supabase.from('profiles').upsert({
+        id: userId,
         ...profile,
         baseline_co2e_week: profile.baseline_co2e_week,
       });
     }
-  }, [state.userId]);
+  }, []);
 
-  const addLog = useCallback((logData: Omit<LogEntry, 'id' | 'logged_at' | 'synced'>) => {
+  /**
+   * Validate and add a log entry.
+   * Returns null on success, or an error string if validation fails.
+   */
+  const addLog = useCallback((logData: Omit<LogEntry, 'id' | 'logged_at' | 'synced'>): string | null => {
+    // Validate all fields before accepting into the store
+    const result = validateLog({
+      category: logData.category,
+      subcategory: logData.subcategory,
+      co2e_kg: logData.co2e_kg,
+      cost_estimate_inr: logData.cost_estimate_inr,
+    });
+    if (!result.ok || !result.value) {
+      return result.error ?? 'Invalid log data';
+    }
+
     const log: LogEntry = {
-      ...logData,
+      ...result.value,
       id: crypto.randomUUID(),
       logged_at: new Date().toISOString(),
       synced: false,
     };
     dispatch({ type: 'ADD_LOG', log });
 
-    // Async sync to Supabase if authenticated
-    if (supabase && state.userId) {
-      supabase.from('logs').insert({
-        user_id: state.userId,
+    // Async sync to Supabase if authenticated (fire-and-forget, non-blocking)
+    const { userId } = stateRef.current;
+    if (supabase && userId) {
+      void supabase.from('logs').insert({
+        user_id: userId,
         category: log.category,
         subcategory: log.subcategory,
         co2e_kg: log.co2e_kg,
@@ -203,12 +237,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
         if (!error) {
           dispatch({
             type: 'SET_LOGS',
-            logs: state.logs.map((l) => l.id === log.id ? { ...l, synced: true } : l),
+            // Use ref to get latest logs — avoids stale closure over state.logs
+            logs: stateRef.current.logs.map((l) => l.id === log.id ? { ...l, synced: true } : l),
           });
         }
       });
     }
-  }, [state.userId, state.logs]);
+
+    return null;
+  }, []);
 
   const completeOnboarding = useCallback(() => {
     dispatch({ type: 'COMPLETE_ONBOARDING' });

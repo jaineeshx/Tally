@@ -28,6 +28,18 @@ export default defineConfig({
       },
     }),
   ],
+  build: {
+    rollupOptions: {
+      output: {
+        // Split vendor chunks for better caching and smaller initial bundle
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          'vendor-charts': ['recharts'],
+          'vendor-ui': ['lucide-react', 'react-hot-toast'],
+        },
+      },
+    },
+  },
   test: {
     globals: true,
     environment: 'jsdom',
