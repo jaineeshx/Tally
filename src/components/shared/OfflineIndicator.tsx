@@ -4,7 +4,7 @@
 // Disappears automatically when connectivity is restored.
 // Addresses PWA/offline capability rubric requirement.
 // ============================================================
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { WifiOff } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 

@@ -4,7 +4,7 @@
 // instead of a blank white screen, which matters for judges
 // evaluating code quality and UX resilience.
 // ============================================================
-import React, { Component, type ErrorInfo, type ReactNode } from 'react';
+import { Component, type ErrorInfo, type ReactNode } from 'react';
 
 interface Props {
   children: ReactNode;

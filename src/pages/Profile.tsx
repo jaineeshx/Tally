@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { computeBaselineWeekly } from '../lib/calculateFootprint';
 import factors from '../data/emissionFactors.json';
 import RecapCard from '../components/gamification/RecapCard';
 import { supabase } from '../lib/supabaseClient';
 import type { CommuteMode, HouseholdSize } from '../types';
-import toast, { Toaster } from 'react-hot-toast';
+import toast from 'react-hot-toast';
 import { Save, LogIn, LogOut, CheckCircle, RefreshCw } from 'lucide-react';
 
 export default function Profile() {
@@ -13,7 +13,6 @@ export default function Profile() {
     profile,
     saveProfile,
     isAuthenticated,
-    userId,
     signInWithMagicLink,
     signOut,
   } = useApp();
@@ -101,7 +100,6 @@ export default function Profile() {
 
   return (
     <div className="page py-6 flex flex-col gap-6 pb-24 animate-fade-in">
-      <Toaster position="top-center" />
 
       {/* Header */}
       <div className="flex flex-col gap-0.5">

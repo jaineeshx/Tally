@@ -2,7 +2,6 @@
 // Home.tsx — Quick-log grid screen
 // Uses useTodayCounts hook to decouple data aggregation from UI.
 // ============================================================
-import React from 'react';
 import toast from 'react-hot-toast';
 import { useApp } from '../context/AppContext';
 import { TILES } from '../data/categories';
@@ -55,7 +54,7 @@ export default function Home() {
       earnedBadgeIds
     );
     newBadges.forEach((badge) => {
-      toast((t) => (
+      toast(
         <div className="flex flex-col gap-1">
           <div className="font-bold text-charcoal-900">
             {ALL_BADGES.find(b => b.id === badge.id)?.icon ?? '🏆'} Badge Earned!
@@ -63,8 +62,8 @@ export default function Home() {
           <div className="text-xs text-charcoal-500">
             {badge.name}: {badge.description}
           </div>
-        </div>
-      ), {
+        </div>,
+      {
         duration: 5000,
         id: `badge-${badge.id}`, // Prevent duplicate toasts for same badge
         style: {

@@ -3,7 +3,7 @@
 // Local-first: reads/writes localStorage, syncs to Supabase
 // when authenticated.
 // ============================================================
-import React, {
+import {
   createContext,
   useContext,
   useEffect,

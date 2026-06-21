@@ -1,4 +1,3 @@
-import React from 'react';
 import type { StreakInfo } from '../../types';
 
 interface StreakBadgeProps {

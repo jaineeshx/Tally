@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { computeBaselineWeekly, toComparisons } from '../lib/calculateFootprint';
 import factors from '../data/emissionFactors.json';

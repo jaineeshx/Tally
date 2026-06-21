@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import LeaderboardList from '../components/gamification/Leaderboard';
 import { ALL_BADGES } from '../lib/streaks';

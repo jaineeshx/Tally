@@ -22,7 +22,8 @@ Every evaluation criterion is explicitly implemented and traceable to source:
 | **Social / leaderboard** | Anonymised weekly leaderboard ranked by % reduction vs personal baseline. Seeded with realistic demo data for the hackathon. | [`Leaderboard.tsx`](src/pages/Leaderboard.tsx) |
 | **Offline-first PWA** | Service worker precaches all static assets + emission factors JSON. All logging, streak calculation, and recommendations work with zero network. An indicator pill appears when offline and disappears when reconnected. | [`vite.config.ts`](vite.config.ts), [`OfflineIndicator.tsx`](src/components/shared/OfflineIndicator.tsx) |
 | **Security** | Content Security Policy (CSP) meta tag restricts script/style/connect sources. All user input validated and sanitised before storage. Log count capped at 500 to prevent localStorage abuse. | [`index.html`](index.html), [`validation.ts`](src/lib/validation.ts) |
-| **Code quality** | Zero `any` types. Stale-closure bug in `addLog` fixed via `useRef` pattern. Custom hooks extract all data logic out of UI components. Error boundaries per-page with local-storage-safe recovery message. | [`AppContext.tsx`](src/context/AppContext.tsx), [`useLogs.ts`](src/hooks/useLogs.ts), [`ErrorBoundary.tsx`](src/components/shared/ErrorBoundary.tsx) |
+| **Code quality** | Full TypeScript strict mode (`noUnusedLocals`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, `noImplicitReturns` — all enabled). Zero `any` types. Stale-closure fixed via `useRef`. Custom hooks extract all data logic. JSDoc on every public function and type. Error boundaries per-page. | [`AppContext.tsx`](src/context/AppContext.tsx), [`useLogs.ts`](src/hooks/useLogs.ts), [`types/index.ts`](src/types/index.ts) |
+| **Accessibility (WCAG 2.1 AA)** | Skip-to-main-content link (2.4.1). Focus management on route change (2.4.3). `prefers-reduced-motion` CSS (2.3.3). `aria-live`, `role="status"` on dynamic indicators. `aria-current="page"` on nav. `role=progressbar` on category bars. sr-only data table fallback for chart (1.1.1). Icons `aria-hidden`. | [`index.css`](src/index.css), [`App.tsx`](src/App.tsx), [`BottomNav.tsx`](src/components/shared/BottomNav.tsx), [`Dashboard.tsx`](src/pages/Dashboard.tsx) |
 | **Verified emission data** | All factors sourced from CEA India, DEFRA UK, US EPA, and IPCC. Full citations in the data file and methodology section below. | [`emissionFactors.json`](src/data/emissionFactors.json) |
 
 ---
@@ -35,7 +36,9 @@ tally/
 ├── vite.config.ts                 # Vite + React + PWA plugin + manual chunk splitting
 ├── tailwind.config.js             # Custom design tokens (cream, gold, charcoal palette)
 ├── postcss.config.js
-├── tsconfig.json / tsconfig.app.json / tsconfig.node.json
+├── tsconfig.json / tsconfig.app.json   # tsconfig.app.json has FULL strict mode:
+│                                       # strict, noUnusedLocals, noUncheckedIndexedAccess,
+│                                       # exactOptionalPropertyTypes, noImplicitReturns
 ├── .env.example                   # Template — copy to .env, add Supabase URL + anon key
 │
 ├── supabase/

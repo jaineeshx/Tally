@@ -1,9 +1,17 @@
 // ============================================================
+// Dashboard.tsx — Footprint stats, charts & recommendations
+//
+// Accessibility:
+//  • Bar chart has an sr-only <table> fallback (WCAG 1.1.1)
+//  • aria-pressed + aria-label on time-range toggle buttons
+//  • role="progressbar" with aria-valuenow on category bars
+//  • aria-live region on the summary card (dynamic content)
+// ============================================================
 // Dashboard.tsx — Footprint stats & charts
 // Refactored to use useFilteredLogs and useFootprintSummary
 // hooks for clean separation of data and presentation.
 // ============================================================
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import {
   BarChart,
   Bar,
@@ -47,7 +55,7 @@ export default function Dashboard() {
     // Populate with actual values
     for (const log of filteredLogs) {
       const key = toLocalDateStr(log.logged_at);
-      if (key in dataMap) dataMap[key] += log.co2e_kg;
+      if (key in dataMap) dataMap[key] = (dataMap[key] ?? 0) + log.co2e_kg;
     }
 
     return Object.entries(dataMap).map(([date, value]) => {
@@ -137,7 +145,35 @@ export default function Dashboard() {
         <h3 className="text-xs font-bold text-charcoal-600 uppercase tracking-wider">
           Daily footprint trend
         </h3>
-        <div className="h-48 w-full select-none" role="img" aria-label="Bar chart showing daily CO2e footprint">
+
+        {/* ── Accessible fallback table for screen readers ─────
+             The visual SVG chart is aria-hidden. Screen readers
+             get this data table instead. (WCAG 1.1.1) */}
+        {filteredLogs.length > 0 && (
+          <table className="sr-only" aria-label="Daily CO₂e footprint data">
+            <caption>Daily footprint (kg CO₂e) — {range === 'today' ? 'Today' : range === 'week' ? 'Last 7 days' : 'Last 30 days'}</caption>
+            <thead>
+              <tr>
+                <th scope="col">Date</th>
+                <th scope="col">CO₂e (kg)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {chartData.map((row) => (
+                <tr key={row.date}>
+                  <td>{row.label}</td>
+                  <td>{row.co2e} kg</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+
+        {/* Visual chart — hidden from accessibility tree */}
+        <div
+          className="h-48 w-full select-none"
+          aria-hidden="true"
+        >
           {filteredLogs.length === 0 ? (
             <div className="h-full flex items-center justify-center text-xs text-charcoal-400 font-medium">
               No logs in this period yet.

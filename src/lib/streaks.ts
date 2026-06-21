@@ -1,11 +1,17 @@
 // ============================================================
 // streaks.ts
-// Pure functions: log dates → streak info + badge eligibility
-// Timezone-safe: works on YYYY-MM-DD date strings only.
+// Pure functions: log dates → streak info + badge eligibility.
+// Timezone-safe: converts ISO timestamps to YYYY-MM-DD in the
+// user's local timezone before any date arithmetic.
+// No network, no DOM, no React. Fully unit-testable.
 // ============================================================
 import type { StreakInfo, Badge, LogEntry } from '../types';
 
-// ── Badge definitions ──────────────────────────────────────
+/**
+ * Canonical list of all badges Tally can award.
+ * Badges use neutral/fun emoji — no leaf/eco icons by design.
+ * IDs are stable strings stored in `earnedBadgeIds`.
+ */
 export const ALL_BADGES: Badge[] = [
   {
     id: 'streak_3',
@@ -51,7 +57,18 @@ export const ALL_BADGES: Badge[] = [
   },
 ];
 
-/** Convert an ISO timestamp or date string to a YYYY-MM-DD string in local time. */
+/**
+ * Convert an ISO 8601 timestamp to a YYYY-MM-DD string in the
+ * user's **local** timezone.
+ *
+ * Uses `Date` getters (not UTC variants) so the date shown
+ * matches the user's wall clock, not UTC. This prevents a
+ * 11:59 PM entry from appearing as the next day in UTC+0.
+ *
+ * @param isoString - Any string parseable by `new Date()`,
+ *                    typically `new Date().toISOString()`.
+ * @returns A date string in `YYYY-MM-DD` format.
+ */
 export function toLocalDateStr(isoString: string): string {
   const d = new Date(isoString);
   const year = d.getFullYear();
@@ -81,9 +98,12 @@ export function calculateStreak(logs: LogEntry[], today?: string): StreakInfo {
   let longestStreak = 1;
   let runLength = 1;
   for (let i = 1; i < uniqueDates.length; i++) {
-    const prev = new Date(uniqueDates[i - 1]);
-    const curr = new Date(uniqueDates[i]);
-    const diffDays = Math.round((curr.getTime() - prev.getTime()) / 86_400_000);
+    const prev = uniqueDates[i - 1];
+    const curr = uniqueDates[i];
+    if (!prev || !curr) continue;
+    const diffDays = Math.round(
+      (new Date(curr).getTime() - new Date(prev).getTime()) / 86_400_000
+    );
     if (diffDays === 1) {
       runLength++;
       longestStreak = Math.max(longestStreak, runLength);
@@ -93,8 +113,12 @@ export function calculateStreak(logs: LogEntry[], today?: string): StreakInfo {
   }
 
   // Calculate current streak (must include today or yesterday to be "live")
-  const lastDate = uniqueDates[uniqueDates.length - 1];
-  const todayDate = new Date(todayStr);
+  const lastDate: string | undefined = uniqueDates[uniqueDates.length - 1];
+  if (!lastDate) {
+    return { current_streak: 0, longest_streak: longestStreak, last_log_date: null };
+  }
+
+  const todayDate   = new Date(todayStr);
   const lastDateTime = new Date(lastDate);
   const diffFromToday = Math.round(
     (todayDate.getTime() - lastDateTime.getTime()) / 86_400_000
@@ -112,9 +136,12 @@ export function calculateStreak(logs: LogEntry[], today?: string): StreakInfo {
   // Walk back from the last date to count the current run
   let currentStreak = 1;
   for (let i = uniqueDates.length - 2; i >= 0; i--) {
-    const curr = new Date(uniqueDates[i + 1]);
-    const prev = new Date(uniqueDates[i]);
-    const diff = Math.round((curr.getTime() - prev.getTime()) / 86_400_000);
+    const curr = uniqueDates[i + 1];
+    const prev = uniqueDates[i];
+    if (!curr || !prev) break;
+    const diff = Math.round(
+      (new Date(curr).getTime() - new Date(prev).getTime()) / 86_400_000
+    );
     if (diff === 1) {
       currentStreak++;
     } else {

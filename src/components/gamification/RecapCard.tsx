@@ -1,11 +1,11 @@
-import React, { useRef, useState, useMemo } from 'react';
+import { useRef, useState, useMemo } from 'react';
 import { toPng } from 'html-to-image';
 import { useApp } from '../../context/AppContext';
 import { calculateFootprint, toComparisons } from '../../lib/calculateFootprint';
 import { Share2, Download, Check } from 'lucide-react';
 
 export default function RecapCard() {
-  const { logs, profile } = useApp();
+  const { logs } = useApp();
   const cardRef = useRef<HTMLDivElement>(null);
   const [downloading, setDownloading] = useState(false);
   const [copied, setCopied] = useState(false);
